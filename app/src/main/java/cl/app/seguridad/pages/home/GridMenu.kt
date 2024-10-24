@@ -62,11 +62,12 @@ fun EmergencyButton(
             text = option.title,
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
-            color = Color.Black,
+            lineHeight = 15.sp,
+            color = Color.DarkGray,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .aspectRatio(3f)
-                .align(Alignment.BottomCenter),
+                .align(Alignment.BottomCenter).padding(top = 4.dp),
             maxLines = 2  // Permitir 2 líneas para títulos largos
         )
     }
@@ -101,11 +102,11 @@ fun GridMenu(modifier: Modifier = Modifier) {
                     title = "Incendio"
                 ),
                 EmergencyOption(
-                    icon = R.drawable.ic_suspicious,
+                    icon = R.drawable.sospecha,
                     title = "Persona sospechosa"
                 ),
                 EmergencyOption(
-                    icon = R.drawable.ic_car_theft,
+                    icon = R.drawable.vehiculo,
                     title = "Robo de vehículo"
                 )
             )
