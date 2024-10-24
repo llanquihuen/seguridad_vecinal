@@ -57,6 +57,14 @@ fun PersonalData (modifier: Modifier = Modifier) {
             readOnly = true,
             modifier = Modifier.fillMaxWidth()
         )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = "cindyberrios02@gmail.com",
+            onValueChange = {},
+            label = { Text("Email") },
+            readOnly = true,
+            modifier = Modifier.fillMaxWidth()
+        )
         // ... otros campos
     }
 }
