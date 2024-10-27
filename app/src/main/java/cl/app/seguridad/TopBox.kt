@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.sp
 fun TopBox(titulo: String) {
     Box(
         Modifier
-            .background(Color(5, 165, 200))
+            .background(Color(1, 148, 158))
             .fillMaxWidth()
     ) {
         Text(
@@ -31,7 +31,7 @@ fun TopBox(titulo: String) {
             modifier = Modifier
                 .padding(0.dp, 50.dp, 0.dp, 35.dp)
                 .align(Alignment.Center)
-                .background(Color(5, 165, 200))
+                .background(Color(1, 148, 158))
 
         )
     }

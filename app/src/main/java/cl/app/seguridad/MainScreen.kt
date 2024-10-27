@@ -25,6 +25,10 @@ import cl.app.seguridad.pages.HomePage
 import cl.app.seguridad.pages.LocationPage
 import cl.app.seguridad.pages.NotificationPage
 import cl.app.seguridad.pages.SettingsPage
+import cl.app.seguridad.pages.alertas.AlertaRoboVehiculo
+import cl.app.seguridad.pages.cameras.ListCam
+import cl.app.seguridad.pages.register.RegisterScreen
+import cl.app.seguridad.pages.reportes.GenerarReporteIncidentes
 
 
 @Composable
@@ -78,8 +82,9 @@ fun ContentScreen(modifier: Modifier = Modifier, selectedIndex : Int) {
     when(selectedIndex){
         0-> HomePage()
         1-> LocationPage()
-        2-> HistoryPage()
+        2-> AlertaRoboVehiculo()
         3-> NotificationPage()
         4-> SettingsPage()
+        5-> RegisterScreen()
     }
 }

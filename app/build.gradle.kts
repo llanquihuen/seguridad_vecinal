@@ -70,4 +70,6 @@ dependencies {
     implementation("androidx.compose.foundation:foundation:1.5.4")
     implementation("androidx.compose.ui:ui:1.5.4")
     implementation("androidx.compose.runtime:runtime:1.5.4")
+    implementation ("androidx.compose.material:material-icons-extended:1.6.0")
+
 }
