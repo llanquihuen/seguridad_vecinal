@@ -70,6 +70,9 @@ dependencies {
     implementation("androidx.compose.foundation:foundation:1.5.4")
     implementation("androidx.compose.ui:ui:1.5.4")
     implementation("androidx.compose.runtime:runtime:1.5.4")
-    implementation ("androidx.compose.material:material-icons-extended:1.6.0")
+    implementation("androidx.compose.material:material-icons-extended:1.6.0")
 
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
 }

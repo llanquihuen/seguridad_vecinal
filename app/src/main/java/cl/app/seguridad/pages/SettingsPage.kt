@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cl.app.seguridad.TopBox
 import cl.app.seguridad.pages.profile.PersonalData
+import cl.app.seguridad.pages.profile.PersonalDataScreen
 import cl.app.seguridad.pages.profile.PictureProfile
 @OptIn(ExperimentalFoundationApi::class)
 @Preview(showBackground = true)
@@ -48,5 +49,7 @@ fun SettingsPage(modifier: Modifier = Modifier) {
         item {PictureProfile()}
         item {Spacer(modifier = Modifier.height(10.dp))}
         item {PersonalData()}
+        item {Spacer(modifier = Modifier.height(10.dp))}
+        item {PersonalDataScreen()}
     }
 }
