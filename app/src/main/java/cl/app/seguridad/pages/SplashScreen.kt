@@ -78,7 +78,7 @@ fun SplashScreen(
             )
     ) {
         Image(
-            painter = painterResource(id = R.drawable.splash_screen),
+            painter = painterResource(id = R.drawable.fondoverde),
             contentDescription = "Splash Screen Background",
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
@@ -127,7 +127,7 @@ fun LogoAnimation(
     }
 
     Image(
-        painter = painterResource(id = R.drawable.splash_logo),
+        painter = painterResource(id = R.drawable.logoprimerapantalla),
         contentDescription = "Logo",
         modifier = modifier
             .fillMaxWidth(0.9f)
