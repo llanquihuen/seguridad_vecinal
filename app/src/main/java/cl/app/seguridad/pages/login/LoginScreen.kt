@@ -72,7 +72,7 @@ fun LoginScreen(
                 .clickable { focusManager.clearFocus() }
         ) {
             Image(
-                painter = painterResource(id = R.drawable.splash_screen),
+                painter = painterResource(id = R.drawable.fondologin),
                 contentDescription = "Splash Screen Background",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
@@ -93,7 +93,7 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.height(36.dp))
 
                     Image(
-                        painter = painterResource(id = R.drawable.splash_logo),
+                        painter = painterResource(id = R.drawable.logoseguridad),
                         contentDescription = "Logo",
                         alignment = Alignment.Center,
                         modifier = Modifier
@@ -110,7 +110,7 @@ fun LoginScreen(
                         Text(
                             text = "Email",
                             modifier = Modifier.padding(bottom = 8.dp),
-                            color = Color.White,
+                            color = Color.DarkGray,
                             textAlign = TextAlign.Left
                         )
                     }
@@ -136,7 +136,7 @@ fun LoginScreen(
                         Text(
                             text = "Contraseña",
                             modifier = Modifier.padding(bottom = 8.dp),
-                            color = Color.White,
+                            color = Color.DarkGray,
                             textAlign = TextAlign.Left
                         )
                     }
@@ -165,8 +165,8 @@ fun LoginScreen(
                             color = Color(222, 252, 244)
                         ),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(247, 242, 250),
-                            contentColor = Color(101, 85, 143)
+                            containerColor = Color(1, 147, 157),
+                            contentColor = Color(255, 255,255,255)
                         )
                     ) {
                         Text("Iniciar Sesión")
