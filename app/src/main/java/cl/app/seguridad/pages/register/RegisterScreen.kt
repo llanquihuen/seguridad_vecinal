@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -53,6 +54,14 @@ import com.journeyapps.barcodescanner.CaptureActivity
 import androidx.compose.ui.tooling.preview.Preview
 import cl.app.seguridad.CaptureActivityPortait
 import cl.app.seguridad.R
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 
 
 @Preview(showBackground = true)
@@ -87,24 +96,43 @@ fun RegisterScreen() {
         }
     )
 
-    Surface(
+    Box(
         modifier = Modifier
-            .fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+            .fillMaxSize()
     ) {
+
+        Image(
+            painter = painterResource(id = R.drawable.fondoverde), // Reemplaza "fondo_registro" con el nombre de tu imagen
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(1f), // Puedes ajustar la opacidad entre 0f y 1f
+            contentScale = ContentScale.Crop
+        )
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(16.dp)
         ) {
             Spacer(modifier = Modifier.padding(0.dp, 30.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text(text = "Pagina de registro")
+            if(runCedula ==null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Página de registro",
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = Color(0xFFffffff),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 14.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
             if (runCedula == null) {
                 Row(
@@ -115,7 +143,13 @@ fun RegisterScreen() {
                 ) {
                     Text(
                         text = "Porfavor registre su cédula. " +
-                                "Escanee la parte posterior de la cédula, donde se encuentra el código QR"
+                                "Escanee la parte posterior de la cédula, donde se encuentra el código QR",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = Color(0xFFffffff),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp),
+                        textAlign = TextAlign.Center
                     )
                 }
                 Image(
@@ -123,7 +157,7 @@ fun RegisterScreen() {
                     contentDescription = "Logo",
                     alignment = Alignment.Center,
                     modifier = Modifier
-                        .fillMaxWidth(0.7f)
+                        .fillMaxWidth(1f)
                         .aspectRatio(1f)
                         .padding(0.dp, 30.dp),
                     contentScale = ContentScale.Fit
@@ -138,6 +172,10 @@ fun RegisterScreen() {
                     Button(
                         modifier = Modifier
                             .wrapContentSize(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(231, 107, 3)
+
+                        ),
                         onClick = {
                             val scanOptions = ScanOptions()
                             scanOptions.setBeepEnabled(true)
@@ -146,7 +184,8 @@ fun RegisterScreen() {
                             scanLauncher.launch(scanOptions)
                         }
                     ) {
-                        Text(text = "Escanear QR")
+                        Text(text = "Escanear QR",
+                            color = Color.White )
                     }
                 }
             }
@@ -160,32 +199,61 @@ fun RegisterScreen() {
                 ) {
                     Text(
                         text = "Registro de Usuario",
-                        style = MaterialTheme.typography.headlineMedium,
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = Color(0xFFffffff),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 14.dp),
+                        textAlign = TextAlign.Center
                     )
 
                     OutlinedTextField(
                         value = nombre,
                         onValueChange = { nombre = it },
                         label = { Text("Nombre") },
+                        singleLine = true,
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFFFFF8E6 ),
+                            unfocusedContainerColor = Color.White,//bloquea el color del fondo
+                            disabledContainerColor = Color.Gray,
+                            errorContainerColor = Color.Red),
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = apellido,
                         onValueChange = { apellido = it },
                         label = { Text("Apellido") },
+                        singleLine = true,
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFFFFF8E6 ),
+                            unfocusedContainerColor = Color.White,//bloquea el color del fondo
+                            disabledContainerColor = Color.Gray,
+                            errorContainerColor = Color.Red),
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
                         label = { Text("Email") },
+                        singleLine = true,
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFFFFF8E6 ),
+                            unfocusedContainerColor = Color.White,//bloquea el color del fondo
+                            disabledContainerColor = Color.Gray,
+                            errorContainerColor = Color.Red),
                         modifier = Modifier.fillMaxWidth()
                     )
                     runCedula?.let {
                         OutlinedTextField(
                             value = it,
                             onValueChange = { runCedula },
+                            label = { Text("Cedula") },
+                            singleLine = true,
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color(0xFFFFF8E6 ),
+                                unfocusedContainerColor = Color.White,//bloquea el color del fondo
+                                disabledContainerColor = Color.Gray,
+                                errorContainerColor = Color.Red),
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -193,6 +261,12 @@ fun RegisterScreen() {
                         value = password,
                         onValueChange = { password = it },
                         label = { Text("Contraseña") },
+                        singleLine = true,
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFFFFF8E6 ),
+                            unfocusedContainerColor = Color.White,//bloquea el color del fondo
+                            disabledContainerColor = Color.Gray,
+                            errorContainerColor = Color.Red),
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -200,6 +274,12 @@ fun RegisterScreen() {
                         value = passwordConfirmation,
                         onValueChange = { passwordConfirmation = it },
                         label = { Text("Confirmar Contraseña") },
+                        singleLine = true,
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFFFFF8E6 ),
+                            unfocusedContainerColor = Color.White,//bloquea el color del fondo
+                            disabledContainerColor = Color.Gray,
+                            errorContainerColor = Color.Red),
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -207,10 +287,17 @@ fun RegisterScreen() {
                         value = direccion,
                         onValueChange = { direccion = it },
                         label = { Text("Dirección") },
+                        singleLine = true,
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color(0xFFFFF8E6 ),
+                            unfocusedContainerColor = Color.White,//bloquea el color del fondo
+                            disabledContainerColor = Color.Gray,
+                            errorContainerColor = Color.Red),
                         modifier = Modifier.fillMaxWidth()
                     )
 
                     // Registration Buttons
+                    // Botones de Registro y Cancelar
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -219,16 +306,29 @@ fun RegisterScreen() {
                     ) {
                         Button(
                             onClick = {},
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(231, 107, 3) // Naranja
+                            )
                         ) {
-                            Text("Registrar")
+                            Text(
+                                "Registrar",
+                                color = Color.White
+                            )
                         }
+
                         Spacer(modifier = Modifier.width(8.dp))
+
                         OutlinedButton(
                             onClick = {},
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = Color(231, 107, 3), // Naranja, 140, 0) // Color del texto naranja
+                            ),
+                            border = BorderStroke(1.dp, Color(231, 107, 3)) // Borde naranja
                         ) {
                             Text("Cancelar")
+
                         }
                     }
                     Spacer(modifier = Modifier.height(30.dp))
