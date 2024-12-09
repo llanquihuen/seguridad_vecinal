@@ -1,161 +1,215 @@
 package cl.app.seguridad.pages.home
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.indication
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import LocationManager
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.ripple.rememberRipple
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cl.app.seguridad.R
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
-data class EmergencyOption(
-    val icon: Int,
-    val title: String,
-    val onClick: () -> Unit = {}  // Valor por defecto para la vista previa
-)
 
 @Composable
-fun EmergencyButton(
+private fun EmergencyButton(
     option: EmergencyOption,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
 ) {
-    Box(
+    Card(
         modifier = modifier
-            .aspectRatio(1f)
-            .padding(4.dp)  // Agregado padding para mejor espaciado
+            .padding(4.dp)
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        )
     ) {
-        val interactionSource = remember { MutableInteractionSource() }
-        androidx.compose.material3.IconButton(
-            onClick = option.onClick,
-            interactionSource = interactionSource,
+        Column(
             modifier = Modifier
-                .aspectRatio(1.5f)
-                .size(50.dp)
-                .align(Alignment.TopCenter)
-                .clip(CircleShape)
-                .indication(interactionSource, rememberRipple(
-                    bounded = false,
-                    radius = 40.dp,
-                    color = Color(0xFF2196F3)  // Color del ripple personalizado
-                ))
+                .padding(8.dp)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Image(
+            Icon(
                 painter = painterResource(id = option.icon),
                 contentDescription = option.title,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.size(48.dp),
+                tint = Color.Unspecified
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = option.title,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium
             )
         }
-        Text(
-            text = option.title,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
-            lineHeight = 15.sp,
-            color = Color.DarkGray,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .aspectRatio(3f)
-                .align(Alignment.BottomCenter).padding(top = 4.dp),
-            maxLines = 2  // Permitir 2 líneas para títulos largos
-        )
     }
 }
 
+@Preview(showBackground = true)
 @Composable
 fun GridMenu(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp),  // Padding general del grid
-        verticalArrangement = Arrangement.spacedBy(16.dp)  // Espacio vertical entre filas
-    ) {
-        val options = listOf(
-            listOf(
-                EmergencyOption(
-                    icon = R.drawable.asalto,
-                    title = "Asalto"
+    var selectedEmergency by remember { mutableStateOf<EmergencyOption?>(null) }
+    var showAlertSentScreen by remember { mutableStateOf(false) }
+    var currentLocation by remember { mutableStateOf<LocationManager.DetailedLocation?>(null) }
+
+    val context = LocalContext.current
+    val locationManager = remember { LocationManager(context) }
+    val scope = rememberCoroutineScope()
+
+    fun getLocation() {
+        scope.launch {
+            currentLocation = locationManager.getDetailedLocation()
+        }
+    }
+
+    if (showAlertSentScreen && selectedEmergency != null) {
+        AlertSentScreen(
+            emergency = selectedEmergency!!,
+            location = currentLocation.toString(),
+            onDismiss = {
+                showAlertSentScreen = false
+                selectedEmergency = null
+                currentLocation = null
+            }
+        )
+    } else {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            val options = listOf(
+                listOf(
+                    EmergencyOption(
+                        icon = R.drawable.asalto,
+                        title = "Asalto",
+                        description = "Se ha reportado un asalto en curso",
+                        actionDescription = "Se notificará inmediatamente a Carabineros y vecinos cercanos",
+                        confirmationMessage = "¿Deseas reportar un asalto en curso?"
+                    ),
+                    EmergencyOption(
+                        icon = R.drawable.botiquin,
+                        title = "Emergencia médica",
+                        description = "Se requiere asistencia médica urgente",
+                        actionDescription = "Se contactará al servicio de emergencias médicas más cercano",
+                        confirmationMessage = "¿Necesitas asistencia médica urgente?"
+                    ),
+                    EmergencyOption(
+                        icon = R.drawable.robocasa,
+                        title = "Robo de casa",
+                        description = "Se ha detectado un intento de robo a propiedad",
+                        actionDescription = "Se alertará a Carabineros y la red vecinal de seguridad",
+                        confirmationMessage = "¿Deseas reportar un robo a propiedad?"
+                    )
                 ),
-                EmergencyOption(
-                    icon = R.drawable.botiquin,
-                    title = "Emergencia médica"
-                ),
-                EmergencyOption(
-                    icon = R.drawable.robocasa,
-                    title = "Robo de casa"
-                )
-            ),
-            listOf(
-                EmergencyOption(
-                    icon = R.drawable.incendio,
-                    title = "Incendio"
-                ),
-                EmergencyOption(
-                    icon = R.drawable.sospecha,
-                    title = "Persona sospechosa"
-                ),
-                EmergencyOption(
-                    icon = R.drawable.vehiculo,
-                    title = "Robo de vehículo"
+                listOf(
+                    EmergencyOption(
+                        icon = R.drawable.incendio,
+                        title = "Incendio",
+                        description = "Se ha reportado un incendio en la zona",
+                        actionDescription = "Se notificará a Bomberos y servicios de emergencia",
+                        confirmationMessage = "¿Deseas reportar un incendio?"
+                    ),
+                    EmergencyOption(
+                        icon = R.drawable.sospecha,
+                        title = "Persona sospechosa",
+                        description = "Se ha detectado actividad sospechosa",
+                        actionDescription = "Se alertará a la red vecinal y patrullas cercanas",
+                        confirmationMessage = "¿Deseas reportar actividad sospechosa?"
+                    ),
+                    EmergencyOption(
+                        icon = R.drawable.vehiculo,
+                        title = "Robo de vehículo",
+                        description = "Se ha reportado un robo de vehículo",
+                        actionDescription = "Se notificará a Carabineros y se activará alerta vehicular",
+                        confirmationMessage = "¿Deseas reportar un robo de vehículo?"
+                    )
                 )
             )
-        )
 
-        options.forEach { rowOptions ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                rowOptions.forEach { option ->
-                    EmergencyButton(
-                        option = option,
-                        modifier = Modifier.weight(1f)
-                    )
+            options.forEach { rowOptions ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowOptions.forEach { option ->
+                        EmergencyButton(
+                            option = option,
+                            modifier = Modifier
+                                .weight(1f)
+                                .aspectRatio(1f),
+                            onClick = {
+                                selectedEmergency = option
+                            }
+                        )
+                    }
                 }
+            }
+
+            selectedEmergency?.let { emergency ->
+                AlertDialog(
+                    onDismissRequest = { selectedEmergency = null },
+                    title = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                painter = painterResource(id = emergency.icon),
+                                contentDescription = null,
+                                modifier = Modifier.size(36.dp),
+                                tint = Color.Unspecified
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(emergency.confirmationMessage)
+                        }
+                    },
+                    text = {
+                        Text(emergency.actionDescription)
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                getLocation()
+                                showAlertSentScreen = true
+                                selectedEmergency = emergency
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = emergency.alertColor
+                            )
+                        ) {
+                            Text("Confirmar")
+                        }
+                    },
+                    dismissButton = {
+                        Button(
+                            onClick = { selectedEmergency = null },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Gray
+                            )
+                        ) {
+                            Text("Cancelar")
+                        }
+                    }
+                )
             }
         }
     }
-}
-
-// Vista previa para EmergencyButton
-@Preview(
-    name = "Emergency Button Preview",
-    showBackground = true,
-    backgroundColor = 0xFFFFFFFF,
-    widthDp = 120,
-    heightDp = 120
-)
-@Composable
-fun EmergencyButtonPreview() {
-    EmergencyButton(
-        option = EmergencyOption(
-            icon = R.drawable.ic_assault_02,
-            title = "Asalto"
-        )
-    )
-}
-
-// Vista previa para GridMenu
-@Preview(
-    name = "Grid Menu Preview",
-    showBackground = true,
-    backgroundColor = 0xFFFFFFFF,
-    widthDp = 320,
-    heightDp = 480
-)
-@Composable
-fun GridMenuPreview() {
-    GridMenu()
 }
