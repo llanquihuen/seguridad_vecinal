@@ -82,7 +82,7 @@ fun ContentScreen(modifier: Modifier = Modifier, selectedIndex : Int) {
     when(selectedIndex){
         0-> HomePage()
         1-> LocationPage()
-        2-> AlertaRoboVehiculo()
+        2-> HistoryPage()
         3-> NotificationPage()
         4-> SettingsPage()
         5-> RegisterScreen()

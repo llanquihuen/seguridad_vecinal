@@ -26,6 +26,8 @@ import cl.app.seguridad.TopBox
 import cl.app.seguridad.pages.home.GridMenu
 import cl.app.seguridad.pages.home.PanicButtons
 import cl.app.seguridad.pages.home.WelcomeText
+import java.util.Date
+
 @OptIn(ExperimentalFoundationApi::class)
 @Preview(showBackground = true)
 @Composable
@@ -50,3 +52,12 @@ fun HomePage(modifier: Modifier = Modifier) {
 
     }
 }
+
+data class AlertHistoryItem(
+    val type: String,
+    val description: String,
+    val location: String,
+    val timestamp: Date,
+    val icon: Int,
+    val alertColor: Color
+)

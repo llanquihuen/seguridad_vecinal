@@ -1,6 +1,9 @@
 package cl.app.seguridad.pages.home
 
 import LocationManager
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,6 +23,8 @@ import androidx.compose.ui.unit.sp
 import cl.app.seguridad.R
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import cl.app.seguridad.pages.AlertHistoryViewModel
 
 
 @Composable
@@ -71,7 +76,24 @@ private fun EmergencyButton(
 
 @Preview(showBackground = true)
 @Composable
-fun GridMenu(modifier: Modifier = Modifier) {
+fun GridMenu(modifier: Modifier = Modifier,
+             viewModel: AlertHistoryViewModel = viewModel()
+) {
+    var permissionsGranted by remember { mutableStateOf(false) }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        permissionsGranted = permissions.values.all { it }
+    }
+
+    LaunchedEffect(Unit) {
+        permissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+    }
     var selectedEmergency by remember { mutableStateOf<EmergencyOption?>(null) }
     var showAlertSentScreen by remember { mutableStateOf(false) }
     var currentLocation by remember { mutableStateOf<LocationManager.DetailedLocation?>(null) }
@@ -80,16 +102,63 @@ fun GridMenu(modifier: Modifier = Modifier) {
     val locationManager = remember { LocationManager(context) }
     val scope = rememberCoroutineScope()
 
+    var isLoadingLocation by remember { mutableStateOf(false) }
+
     fun getLocation() {
+        isLoadingLocation = true
         scope.launch {
-            currentLocation = locationManager.getDetailedLocation()
+            try {
+                println("Iniciando obtención de ubicación")
+                currentLocation = locationManager.getDetailedLocation()
+                println("Ubicación obtenida: $currentLocation")
+                if (currentLocation == null) {
+                    // Si la ubicación es nula, asignar una ubicación por defecto
+                    currentLocation = LocationManager.DetailedLocation(
+                        address = "Ubicación no disponible",
+                        street = "",
+                        number = "",
+                        commune = "",
+                        city = ""
+                    )
+                }
+            } catch (e: Exception) {
+                println("Error al obtener ubicación: ${e.message}")
+                // Si hay un error, asignar una ubicación por defecto
+                currentLocation = LocationManager.DetailedLocation(
+                    address = "Error al obtener ubicación",
+                    street = "",
+                    number = "",
+                    commune = "",
+                    city = ""
+                )
+            } finally {
+                isLoadingLocation = false
+            }
         }
     }
+
+
 
     if (showAlertSentScreen && selectedEmergency != null) {
         AlertSentScreen(
             emergency = selectedEmergency!!,
-            location = currentLocation.toString(),
+            location = when {
+                currentLocation != null -> buildString {
+                    if (!currentLocation?.street.isNullOrEmpty()) {
+                        append(currentLocation?.street)
+                        if (!currentLocation?.number.isNullOrEmpty()) {
+                            append(" ${currentLocation?.number}")
+                        }
+                    }
+                    if (!currentLocation?.commune.isNullOrEmpty()) {
+                        append(", ${currentLocation?.commune}")
+                    }
+                    if (!currentLocation?.city.isNullOrEmpty()) {
+                        append(", ${currentLocation?.city}")
+                    }
+                }.takeIf { it.isNotEmpty() } ?: "Ubicación no disponible"
+                else -> "Obteniendo ubicación..."
+            },
             onDismiss = {
                 showAlertSentScreen = false
                 selectedEmergency = null
@@ -171,6 +240,7 @@ fun GridMenu(modifier: Modifier = Modifier) {
                 }
             }
 
+            // Diálogo de confirmación
             selectedEmergency?.let { emergency ->
                 AlertDialog(
                     onDismissRequest = { selectedEmergency = null },
@@ -193,18 +263,44 @@ fun GridMenu(modifier: Modifier = Modifier) {
                     text = {
                         Text(emergency.actionDescription)
                     },
+                    // AQUÍ es donde debe ir el nuevo código del confirmButton
                     confirmButton = {
                         Button(
                             onClick = {
                                 getLocation()
+                                viewModel.addAlert(emergency, when {
+                                    currentLocation != null -> buildString {
+                                        if (!currentLocation?.street.isNullOrEmpty()) {
+                                            append(currentLocation?.street)
+                                            if (!currentLocation?.number.isNullOrEmpty()) {
+                                                append(" ${currentLocation?.number}")
+                                            }
+                                        }
+                                        if (!currentLocation?.commune.isNullOrEmpty()) {
+                                            append(", ${currentLocation?.commune}")
+                                        }
+                                        if (!currentLocation?.city.isNullOrEmpty()) {
+                                            append(", ${currentLocation?.city}")
+                                        }
+                                    }.takeIf { it.isNotEmpty() } ?: "Ubicación no disponible"
+                                    else -> "Obteniendo ubicación..."
+                                })
                                 showAlertSentScreen = true
                                 selectedEmergency = emergency
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = emergency.alertColor
-                            )
+                            ),
+                            enabled = !isLoadingLocation
                         ) {
-                            Text("Confirmar")
+                            if (isLoadingLocation) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = Color.White
+                                )
+                            } else {
+                                Text("Confirmar")
+                            }
                         }
                     },
                     dismissButton = {

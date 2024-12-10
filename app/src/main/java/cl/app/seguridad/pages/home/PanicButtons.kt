@@ -1,5 +1,6 @@
 package cl.app.seguridad.pages.home
 
+import LocationManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -37,17 +38,63 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-
-
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
+import androidx.lifecycle.viewmodel.compose.viewModel
+import cl.app.seguridad.pages.AlertHistoryViewModel
 
 @Preview(showBackground = true)
 @Composable
-fun PanicButtons() {
+fun PanicButtons(
+    modifier: Modifier = Modifier,
+    viewModel: AlertHistoryViewModel = viewModel()
+) {
     var showConfirmDialog by remember { mutableStateOf(false) }
     var showAlertSentScreen by remember { mutableStateOf(false) }
     var showSilentConfirmDialog by remember { mutableStateOf(false) }
     var selectedEmergency by remember { mutableStateOf<EmergencyOption?>(null) }
-    var currentLocation by remember { mutableStateOf("San Martín 123") }
+
+    // Nuevas variables para location
+    var currentLocation by remember { mutableStateOf<LocationManager.DetailedLocation?>(null) }
+    var isLoadingLocation by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val locationManager = remember { LocationManager(context) }
+    val scope = rememberCoroutineScope()
+
+
+    // Función para obtener ubicación
+    fun getLocation() {
+        isLoadingLocation = true
+        scope.launch {
+            try {
+                println("Iniciando obtención de ubicación")
+                currentLocation = locationManager.getDetailedLocation()
+                println("Ubicación obtenida: $currentLocation")
+                if (currentLocation == null) {
+                    currentLocation = LocationManager.DetailedLocation(
+                        address = "Ubicación no disponible",
+                        street = "",
+                        number = "",
+                        commune = "",
+                        city = ""
+                    )
+                }
+            } catch (e: Exception) {
+                println("Error al obtener ubicación: ${e.message}")
+                currentLocation = LocationManager.DetailedLocation(
+                    address = "Error al obtener ubicación",
+                    street = "",
+                    number = "",
+                    commune = "",
+                    city = ""
+                )
+            } finally {
+                isLoadingLocation = false
+            }
+        }
+    }
 
     // Definir las opciones de emergencia
     val panicOption = EmergencyOption(
@@ -70,12 +117,29 @@ fun PanicButtons() {
 
     if (showAlertSentScreen && selectedEmergency != null) {
         AlertSentScreen(
-            location = currentLocation,
+            emergency = selectedEmergency!!,
+            location = when {
+                currentLocation != null -> buildString {
+                    if (!currentLocation?.street.isNullOrEmpty()) {
+                        append(currentLocation?.street)
+                        if (!currentLocation?.number.isNullOrEmpty()) {
+                            append(" ${currentLocation?.number}")
+                        }
+                    }
+                    if (!currentLocation?.commune.isNullOrEmpty()) {
+                        append(", ${currentLocation?.commune}")
+                    }
+                    if (!currentLocation?.city.isNullOrEmpty()) {
+                        append(", ${currentLocation?.city}")
+                    }
+                }.takeIf { it.isNotEmpty() } ?: "Ubicación no disponible"
+                else -> "Obteniendo ubicación..."
+            },
             onDismiss = {
                 showAlertSentScreen = false
                 selectedEmergency = null
-            },
-            emergency = selectedEmergency!!
+                currentLocation = null
+            }
         )
     }
 
@@ -185,15 +249,41 @@ fun PanicButtons() {
             confirmButton = {
                 Button(
                     onClick = {
+                        getLocation()
+                        viewModel.addAlert(panicOption, when {
+                            currentLocation != null -> buildString {
+                                if (!currentLocation?.street.isNullOrEmpty()) {
+                                    append(currentLocation?.street)
+                                    if (!currentLocation?.number.isNullOrEmpty()) {
+                                        append(" ${currentLocation?.number}")
+                                    }
+                                }
+                                if (!currentLocation?.commune.isNullOrEmpty()) {
+                                    append(", ${currentLocation?.commune}")
+                                }
+                                if (!currentLocation?.city.isNullOrEmpty()) {
+                                    append(", ${currentLocation?.city}")
+                                }
+                            }.takeIf { it.isNotEmpty() } ?: "Ubicación no disponible"
+                            else -> "Obteniendo ubicación..."
+                        })
                         showConfirmDialog = false
                         showAlertSentScreen = true
                         selectedEmergency = panicOption
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFFF4444)
-                    )
+                    ),
+                    enabled = !isLoadingLocation
                 ) {
-                    Text("Enviar")
+                    if (isLoadingLocation) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White
+                        )
+                    } else {
+                        Text("Enviar")
+                    }
                 }
             },
             dismissButton = {
@@ -232,15 +322,41 @@ fun PanicButtons() {
             confirmButton = {
                 Button(
                     onClick = {
+                        getLocation()
+                        viewModel.addAlert(silentPanicOption, when {
+                            currentLocation != null -> buildString {
+                                if (!currentLocation?.street.isNullOrEmpty()) {
+                                    append(currentLocation?.street)
+                                    if (!currentLocation?.number.isNullOrEmpty()) {
+                                        append(" ${currentLocation?.number}")
+                                    }
+                                }
+                                if (!currentLocation?.commune.isNullOrEmpty()) {
+                                    append(", ${currentLocation?.commune}")
+                                }
+                                if (!currentLocation?.city.isNullOrEmpty()) {
+                                    append(", ${currentLocation?.city}")
+                                }
+                            }.takeIf { it.isNotEmpty() } ?: "Ubicación no disponible"
+                            else -> "Obteniendo ubicación..."
+                        })
                         showSilentConfirmDialog = false
                         showAlertSentScreen = true
                         selectedEmergency = silentPanicOption
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF9E9E9E)
-                    )
+                    ),
+                    enabled = !isLoadingLocation
                 ) {
-                    Text("Enviar")
+                    if (isLoadingLocation) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White
+                        )
+                    } else {
+                        Text("Enviar")
+                    }
                 }
             },
             dismissButton = {

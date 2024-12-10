@@ -14,46 +14,55 @@ class LocationManager(private val context: Context) {
         val street: String?,
         val number: String?,
         val commune: String?,
-        val city: String?,
-        val latitude: Double,
-        val longitude: Double
+        val city: String?
     )
 
     @SuppressLint("MissingPermission")
     suspend fun getDetailedLocation(): DetailedLocation? {
         return suspendCancellableCoroutine { continuation ->
-            fusedLocationClient.lastLocation
-                .addOnSuccessListener { location ->
-                    if (location != null) {
-                        val geocoder = Geocoder(context, Locale.getDefault())
-                        val addresses = geocoder.getFromLocation(
-                            location.latitude,
-                            location.longitude,
-                            1
-                        )
-                        val address = addresses?.firstOrNull()
-
-                        if (address != null) {
-                            val detailedLocation = DetailedLocation(
-                                address = address.getAddressLine(0),
-                                street = address.thoroughfare,
-                                number = address.subThoroughfare,
-                                commune = address.subLocality,
-                                city = address.locality,
-                                latitude = location.latitude,
-                                longitude = location.longitude
-                            )
-                            continuation.resume(detailedLocation)
+            try {
+                fusedLocationClient.lastLocation
+                    .addOnSuccessListener { location ->
+                        if (location != null) {
+                            val geocoder = Geocoder(context, Locale.getDefault())
+                            try {
+                                val addresses = geocoder.getFromLocation(
+                                    location.latitude,
+                                    location.longitude,
+                                    1
+                                )
+                                val address = addresses?.firstOrNull()
+                                if (address != null) {
+                                    val detailedLocation = DetailedLocation(
+                                        address = address.getAddressLine(0) ?: "",
+                                        street = address.thoroughfare,
+                                        number = address.subThoroughfare,
+                                        commune = address.subLocality,
+                                        city = address.locality
+                                    )
+                                    println("Ubicación obtenida exitosamente: $detailedLocation")
+                                    continuation.resume(detailedLocation)
+                                } else {
+                                    println("No se pudo obtener la dirección")
+                                    continuation.resume(null)
+                                }
+                            } catch (e: Exception) {
+                                println("Error al obtener la dirección: ${e.message}")
+                                continuation.resume(null)
+                            }
                         } else {
+                            println("Location es null")
                             continuation.resume(null)
                         }
-                    } else {
+                    }
+                    .addOnFailureListener { e ->
+                        println("Error al obtener ubicación: ${e.message}")
                         continuation.resume(null)
                     }
-                }
-                .addOnFailureListener {
-                    continuation.resume(null)
-                }
+            } catch (e: Exception) {
+                println("Error general: ${e.message}")
+                continuation.resume(null)
+            }
         }
     }
 }

@@ -11,6 +11,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import cl.app.seguridad.pages.home.EmergencyOption
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import java.util.Date
 
 @Composable
 fun LocationPage(modifier: Modifier = Modifier) {
@@ -27,5 +32,22 @@ fun LocationPage(modifier: Modifier = Modifier) {
             fontWeight = FontWeight.SemiBold,
             color = Color.White
         )
+    }
+}
+
+class AlertHistoryViewModel : ViewModel() {
+    private val _alerts = MutableStateFlow<List<AlertHistoryItem>>(emptyList())
+    val alerts = _alerts.asStateFlow()
+
+    fun addAlert(emergency: EmergencyOption, location: String) {
+        val newAlert = AlertHistoryItem(
+            type = emergency.title,
+            description = emergency.description,
+            location = location,
+            timestamp = Date(),
+            icon = emergency.icon,
+            alertColor = emergency.alertColor
+        )
+        _alerts.value = listOf(newAlert) + _alerts.value
     }
 }
