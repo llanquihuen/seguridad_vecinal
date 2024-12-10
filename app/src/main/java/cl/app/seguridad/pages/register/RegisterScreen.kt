@@ -89,6 +89,7 @@ fun RegisterScreen(
 
     val coroutineScope = rememberCoroutineScope()
     var showPopup by remember { mutableStateOf(false) }
+    var showSuccessPopup by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     var dataCedula by remember { mutableStateOf("---") }
@@ -146,6 +147,9 @@ fun RegisterScreen(
     ) {
         if (showPopup) {
             RutExistsPopup(onDismiss = { showPopup = false })
+        }
+        if(showSuccessPopup){
+            SuccessPopup(onDismiss = { navigateToLogin() })
         }
         Image(
             painter = painterResource(id = R.drawable.fondoverde), // Reemplaza "fondo_registro" con el nombre de tu imagen
@@ -381,7 +385,7 @@ fun RegisterScreen(
                                 coroutineScope.launch {
                                     val resultado = registerUser(usuario)
                                     if (resultado) {
-                                        navigateToLogin() // Si el registro fue exitoso, navega a la pantalla de inicio de sesión
+                                        showSuccessPopup = true
                                     } else {
                                         errorMessage = "Error al registrar el usuario. Verifique sus datos."
                                     }
@@ -461,6 +465,45 @@ fun RutExistsPopup(
         }
     }
 }
+@Composable
+fun SuccessPopup(
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss
+    ) {
+        Card(
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 8.dp
+            ),
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "Nuevo Registro",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                Text(
+                    "Su usuario ha sido registrado exitosamente, su cuenta se encuentra en espera de su verificación, le llegara un email con los detalles de su cuenta.",
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                Button(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(231, 107, 3)
+                    )
+                ) {
+                    Text("Cerrar")
+                }
+            }
+        }
+    }
+}
 
 suspend fun fetchUserData(rut: String): Boolean {
     return try {
@@ -473,18 +516,6 @@ suspend fun fetchUserData(rut: String): Boolean {
         false
     }
 }
-
-//suspend fun registerUser(usuario: Usuario): String {
-//    return try {
-//        val response = registerUserService.registerUser(usuario)
-//        val responseString = response.string()
-//        Log.v("MyTag", "Response: $responseString")
-//        return responseString
-//    } catch (e: Exception) {
-//        Log.e("MyTag", "Error registering user data", e)
-//        return e.message.toString()
-//    }
-//}
 
 suspend fun registerUser(usuario: Usuario): Boolean {
     return try {

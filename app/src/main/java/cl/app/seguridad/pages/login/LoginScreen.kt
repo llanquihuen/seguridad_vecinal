@@ -182,7 +182,9 @@ fun LoginScreen(
                                 }
                             }
                         },
+
                         modifier = Modifier.fillMaxWidth(0.7f),
+                        enabled = (emailState.isNotEmpty() && passwordState.isNotEmpty()),
                         border = BorderStroke(
                             width = 1.dp,
                             color = Color(222, 252, 244)
