@@ -1,3 +1,6 @@
+import android.annotation.SuppressLint
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -25,13 +28,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cl.app.seguridad.R
-import kotlinx.coroutines.launch
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import cl.app.seguridad.pages.cameras.Screen
+import cl.app.seguridad.api.RetrofitClient.authService
+import cl.app.seguridad.data.dao.LoginRequest
 import cl.app.seguridad.pages.login.Home
 import cl.app.seguridad.pages.login.RegisterQR
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+
 
 enum class LoginRegisterRoute(){
     Login,
@@ -40,6 +47,7 @@ enum class LoginRegisterRoute(){
 }
 
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
@@ -48,17 +56,13 @@ fun LoginScreen(
 //    currentScreen: String,
 //    onScreenChange: (String) -> Unit
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
     val focusManager = LocalFocusManager.current
-    val bottomSheetScaffoldState = rememberBottomSheetScaffoldState()
     val coroutineScope = rememberCoroutineScope()
 
-    var nombre by remember { mutableStateOf("") }
-    var apellido by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordConfirmation by remember { mutableStateOf("") }
-    var direccion by remember { mutableStateOf("") }
-
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -68,7 +72,8 @@ fun LoginScreen(
                             Color(0xFF87CEEB),
                             Color(0xFFFFFFFF)
                         )
-                    ))
+                    )
+                )
                 .clickable { focusManager.clearFocus() }
         ) {
             Image(
@@ -88,8 +93,8 @@ fun LoginScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    val emailState = remember { mutableStateOf("") }
-                    val passwordState = remember { mutableStateOf("") }
+                    var emailState by remember { mutableStateOf("") }
+                    var passwordState by remember { mutableStateOf("") }
                     Spacer(modifier = Modifier.height(36.dp))
 
                     Image(
@@ -115,8 +120,8 @@ fun LoginScreen(
                         )
                     }
                     TextField(
-                        value = emailState.value,
-                        onValueChange = { emailState.value = it },
+                        value = emailState,
+                        onValueChange = { emailState = it },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("Email") },
                         singleLine = true,
@@ -141,8 +146,8 @@ fun LoginScreen(
                         )
                     }
                     TextField(
-                        value = passwordState.value,
-                        onValueChange = { passwordState.value = it },
+                        value = passwordState,
+                        onValueChange = { passwordState = it },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("Contraseña") },
                         singleLine = true,
@@ -158,7 +163,25 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.height(46.dp))
 
                     Button(
-                        onClick = { navigateToHome() },
+                        onClick = {
+                            coroutineScope.launch {
+                                try {
+                                    var response = authService.login(LoginRequest(emailState, passwordState))
+                                    var responseString = response.string()
+                                    if (responseString.contains("exitoso")) {
+                                        navigateToHome()
+                                    } else {
+                                        if (responseString.contains("verificado")){
+                                            snackbarHostState.showSnackbar("Usuario en espera de verificación")
+                                        } else {
+                                            snackbarHostState.showSnackbar("Credenciales incorrectas")
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    snackbarHostState.showSnackbar("Error de conexión: ${e.localizedMessage}")
+                                }
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth(0.7f),
                         border = BorderStroke(
                             width = 1.dp,
@@ -166,7 +189,7 @@ fun LoginScreen(
                         ),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(1, 147, 157),
-                            contentColor = Color(255, 255,255,255)
+                            contentColor = Color(255, 255, 255, 255)
                         )
                     ) {
                         Text("Iniciar Sesión")
@@ -175,7 +198,7 @@ fun LoginScreen(
                     // Trigger the registration bottom sheet
                     ClickableText(
                         text = AnnotatedString("Registrarse"),
-                        onClick = {navigateToRegister()},
+                        onClick = { navigateToRegister() },
                         modifier = Modifier.padding(top = 16.dp),
                         style = TextStyle(color = Color.Black)
                     )
@@ -205,7 +228,7 @@ fun LoginScreen(
                 }
             }
         }
-
+    }
 }
 
 

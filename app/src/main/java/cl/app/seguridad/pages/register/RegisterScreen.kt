@@ -1,6 +1,7 @@
 package cl.app.seguridad.pages.register
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -58,16 +59,24 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.ui.res.painterResource
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.window.Dialog
+import cl.app.seguridad.api.RetrofitClient.apiService
+import cl.app.seguridad.api.RetrofitClient.registerUserService
+import cl.app.seguridad.data.Usuario
+import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 
-@Preview(showBackground = true)
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun RegisterScreen() {
+fun RegisterScreen(
+    navigateToLogin: () -> Unit,
+) {
     val permissions = rememberMultiplePermissionsState(
         permissions = listOf(
             android.Manifest.permission.CAMERA
@@ -78,29 +87,66 @@ fun RegisterScreen() {
         permissions.launchMultiplePermissionRequest()
     }
 
-//    var listaStrings by remember { mutableStateOf(emptyList<String>()) }
+    val coroutineScope = rememberCoroutineScope()
+    var showPopup by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
     var dataCedula by remember { mutableStateOf("---") }
     var runCedula by remember { mutableStateOf<String?>(null) }
-    var nombre by remember { mutableStateOf("") }
-    var apellido by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordConfirmation by remember { mutableStateOf("") }
-    var direccion by remember { mutableStateOf("") }
+
+
+    var usuario by remember {
+        mutableStateOf(
+            Usuario(
+                nombre = "",
+                apellido = "",
+                email = "",
+                rut = "",
+                password = "",
+                passwordConfirmation = "",
+                estadoCuenta = false,
+                fechaRegistro = LocalDate.now().toString(),
+                direccion = "",
+                latitud = 0.0,
+                longitud = 0.0,
+                verificado = false,
+                tokenVerificacion = ""
+            )
+        )
+    }
+    val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")
+    val isEmailValid by derivedStateOf { usuario.email.matches(emailRegex) }
+    val arePasswordsMatching by derivedStateOf { usuario.password == usuario.passwordConfirmation }
+    val isFormValid by derivedStateOf { arePasswordsMatching && isEmailValid && usuario.password.isNotEmpty()  }
 
     val scanLauncher = rememberLauncherForActivityResult (
         contract = ScanContract(),
         onResult = {
             result -> dataCedula = result.contents ?: "---"
             runCedula = extractAndVerify(result.contents) ?: null
+            var existRut = false
+
+            if (runCedula != null) {
+                usuario = usuario.copy(rut = runCedula!!)
+                coroutineScope.launch {
+                    existRut = fetchUserData(runCedula!!)
+                    if (existRut) {
+                        runCedula = null
+                        showPopup = true
+                    }
+                }
+            }
         }
     )
+
 
     Box(
         modifier = Modifier
             .fillMaxSize()
     ) {
-
+        if (showPopup) {
+            RutExistsPopup(onDismiss = { showPopup = false })
+        }
         Image(
             painter = painterResource(id = R.drawable.fondoverde), // Reemplaza "fondo_registro" con el nombre de tu imagen
             contentDescription = null,
@@ -206,10 +252,20 @@ fun RegisterScreen() {
                             .padding(bottom = 14.dp),
                         textAlign = TextAlign.Center
                     )
+                    if (errorMessage != null) {
+                        Text(
+                            text = errorMessage ?: "",
+                            color = Color.Red,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
 
                     OutlinedTextField(
-                        value = nombre,
-                        onValueChange = { nombre = it },
+                        value = usuario.nombre,
+                        onValueChange = { nuevoNombre ->
+                            usuario = usuario.copy(nombre = nuevoNombre) // Usas un método de la clase para actualizar
+                        },
                         label = { Text("Nombre") },
                         singleLine = true,
                         colors = TextFieldDefaults.colors(
@@ -220,8 +276,10 @@ fun RegisterScreen() {
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
-                        value = apellido,
-                        onValueChange = { apellido = it },
+                        value = usuario.apellido,
+                        onValueChange = { nuevoApellido ->
+                            usuario = usuario.copy(apellido = nuevoApellido) // Usas un método de la clase para actualizar
+                        },
                         label = { Text("Apellido") },
                         singleLine = true,
                         colors = TextFieldDefaults.colors(
@@ -232,12 +290,16 @@ fun RegisterScreen() {
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it },
+                        value = usuario.email,
+                        onValueChange = { nuevoEmail ->
+                            usuario = usuario.copy(email = nuevoEmail) // Usas un método de la clase para actualizar
+                        },
                         label = { Text("Email") },
                         singleLine = true,
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color(0xFFFFF8E6 ),
+                            unfocusedIndicatorColor = if (isEmailValid) Color.Black else Color.Red,
+                            focusedIndicatorColor = if (isEmailValid) MaterialTheme.colorScheme.primary else Color.Red,
                             unfocusedContainerColor = Color.White,//bloquea el color del fondo
                             disabledContainerColor = Color.Gray,
                             errorContainerColor = Color.Red),
@@ -258,34 +320,44 @@ fun RegisterScreen() {
                         )
                     }
                     OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
+                        value = usuario.password,
+                        onValueChange = { nuevoPassword ->
+                            usuario = usuario.copy(password = nuevoPassword) // Usas un método de la clase para actualizar
+                        },
                         label = { Text("Contraseña") },
                         singleLine = true,
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color(0xFFFFF8E6 ),
-                            unfocusedContainerColor = Color.White,//bloquea el color del fondo
+                            unfocusedIndicatorColor = if (arePasswordsMatching) Color.Black else Color.Red,
+                            focusedIndicatorColor = if (arePasswordsMatching) MaterialTheme.colorScheme.primary else Color.Red,
+                            unfocusedContainerColor =  Color.White,
                             disabledContainerColor = Color.Gray,
                             errorContainerColor = Color.Red),
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
-                        value = passwordConfirmation,
-                        onValueChange = { passwordConfirmation = it },
+                        value = usuario.passwordConfirmation,
+                        onValueChange = { nuevoPasswordConfirmation ->
+                            usuario = usuario.copy(passwordConfirmation = nuevoPasswordConfirmation) // Usas un método de la clase para actualizar
+                        },
                         label = { Text("Confirmar Contraseña") },
                         singleLine = true,
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color(0xFFFFF8E6 ),
-                            unfocusedContainerColor = Color.White,//bloquea el color del fondo
+                            unfocusedIndicatorColor = if (arePasswordsMatching) Color.Black else Color.Red,
+                            focusedIndicatorColor = if (arePasswordsMatching) MaterialTheme.colorScheme.primary else Color.Red,
+                            unfocusedContainerColor =  Color.White,
                             disabledContainerColor = Color.Gray,
                             errorContainerColor = Color.Red),
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
-                        value = direccion,
-                        onValueChange = { direccion = it },
+                        value = usuario.direccion,
+                        onValueChange = { nuevoDireccion ->
+                            usuario = usuario.copy(direccion = nuevoDireccion) // Usas un método de la clase para actualizar
+                        },
                         label = { Text("Dirección") },
                         singleLine = true,
                         colors = TextFieldDefaults.colors(
@@ -305,10 +377,20 @@ fun RegisterScreen() {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Button(
-                            onClick = {},
+                            onClick = {
+                                coroutineScope.launch {
+                                    val resultado = registerUser(usuario)
+                                    if (resultado) {
+                                        navigateToLogin() // Si el registro fue exitoso, navega a la pantalla de inicio de sesión
+                                    } else {
+                                        errorMessage = "Error al registrar el usuario. Verifique sus datos."
+                                    }
+                                }
+                            },
+                            enabled = isFormValid,
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(231, 107, 3) // Naranja
+                                containerColor = if (isFormValid) Color(231, 107, 3)  else Color.Gray
                             )
                         ) {
                             Text(
@@ -317,10 +399,11 @@ fun RegisterScreen() {
                             )
                         }
 
+
                         Spacer(modifier = Modifier.width(8.dp))
 
                         OutlinedButton(
-                            onClick = {},
+                            onClick = {runCedula = null},
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.outlinedButtonColors(
                                 contentColor = Color(231, 107, 3), // Naranja, 140, 0) // Color del texto naranja
@@ -338,13 +421,90 @@ fun RegisterScreen() {
     }
 }
 
+// Popup for existing RUT
+@Composable
+fun RutExistsPopup(
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss
+    ) {
+        Card(
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 8.dp
+            ),
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "El RUT ingresado ya existe",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                Text(
+                    "Este RUT ya está registrado en el sistema. Por favor, utilice un RUT diferente.",
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                Button(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(231, 107, 3)
+                    )
+                ) {
+                    Text("Cerrar")
+                }
+            }
+        }
+    }
+}
+
+suspend fun fetchUserData(rut: String): Boolean {
+    return try {
+        val response = apiService.findRut(rut) // Asegúrate de que esto retorne un `ResponseBody` o `String`
+        val responseString = response.string() // Convierte el cuerpo de la respuesta a un String
+        Log.v("MyTag", "Response: $responseString") // Log the response
+        responseString.contains("encontrado")
+    } catch (e: Exception) {
+        Log.e("MyTag", "Error fetching user data", e)
+        false
+    }
+}
+
+//suspend fun registerUser(usuario: Usuario): String {
+//    return try {
+//        val response = registerUserService.registerUser(usuario)
+//        val responseString = response.string()
+//        Log.v("MyTag", "Response: $responseString")
+//        return responseString
+//    } catch (e: Exception) {
+//        Log.e("MyTag", "Error registering user data", e)
+//        return e.message.toString()
+//    }
+//}
+
+suspend fun registerUser(usuario: Usuario): Boolean {
+    return try {
+        val response = registerUserService.register(usuario)
+        if (response.isSuccessful) {
+            true // Registro exitoso
+        } else {
+            Log.e("RegisterError", "Error: ${response.errorBody()?.string()}")
+            false // Error en el registro
+        }
+    } catch (e: Exception) {
+        Log.e("RegisterException", "Exception: ${e.message}")
+        false // Error de red o de otra naturaleza
+    }
+}
+
 fun extractAndVerify(text: String): String? {
     if (!text.contains("CEDULA")) {return null}
-
-    // Regular expression to extract the desired text
     val regex = Regex("""RUN=(\d{6,8}-(?:\d|[kK]))""")
     val matchResult = regex.find(text)
     println(matchResult)
-    // Return the extracted text if found, otherwise null
     return matchResult?.groupValues?.getOrNull(1)
 }

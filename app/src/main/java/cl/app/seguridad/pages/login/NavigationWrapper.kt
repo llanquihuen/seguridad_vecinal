@@ -20,7 +20,9 @@ fun NavigationWrapper(){
             )
         }
         composable<RegisterQR>{
-            RegisterScreen()
+            RegisterScreen(
+                {navController.navigate(Login)},
+            )
         }
         composable<Home>{
             MainScreen()
