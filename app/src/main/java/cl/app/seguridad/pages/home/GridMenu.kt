@@ -31,6 +31,7 @@ private fun EmergencyButton(
     Card(
         modifier = modifier
             .padding(4.dp)
+             // Tamaño fijo para hacer los botones cuadrados y más pequeños
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(
@@ -39,22 +40,30 @@ private fun EmergencyButton(
     ) {
         Column(
             modifier = Modifier
-                .padding(8.dp)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .padding(2.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.SpaceBetween
+        // Distribuye el espacio entre los elementos
         ) {
             Icon(
                 painter = painterResource(id = option.icon),
                 contentDescription = option.title,
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier
+                    .size(62.dp)
+                    .padding(top = 4.dp),
                 tint = Color.Unspecified
             )
-            Spacer(modifier = Modifier.height(8.dp))
+
             Text(
                 text = option.title,
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = 12.sp  // Tamaño de texto más pequeño
+                ),
+                maxLines = 2,
+                minLines = 2,
+                modifier = Modifier.padding(bottom = 2.dp)
             )
         }
     }
